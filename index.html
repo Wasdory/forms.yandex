@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Яндекс Форма</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            text-align: center;
+        }
+        .form-container {
+            background: white;
+            max-width: 400px;
+            margin: 40px auto;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        input {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #ffcc00;
+            color: black;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #f7c600;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>Яндекс Форма</h2>
+        <p>Пожалуйста, заполните поля:</p>
+        <input type="text" placeholder="Ваше имя" id="name">
+        <input type="email" placeholder="Email" id="email">
+        <button id="submitBtn">Отправить</button>
+    </div>
+
+    <script>
+        // Функция для открытия YouTube видео со звуком
+        function openRickRoll() {
+            // Прямая ссылка на официальное видео
+            var videoUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+            // Открываем видео в новой вкладке
+            window.open(videoUrl, '_blank');
+        }
+
+        // Вешаем обработчик на кнопку
+        document.getElementById('submitBtn').addEventListener('click', openRickRoll);
+    </script>
+</body>
+</html>
