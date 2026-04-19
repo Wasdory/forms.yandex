@@ -2,28 +2,139 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Яндекс Форма</title>
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow: hidden;
-            background-color: #000;
-        }
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; }
+        iframe { width: 100%; height: 100%; border: none; }
+        /* Стили для очень убедительной кнопки */
+        .trigger-button {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            padding: 16px 40px; background: #FFCC00; color: #000;
+            border: none; border-radius: 50px; font-size: 20px; font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer;
+            z-index: 10; font-family: Arial, sans-serif;
         }
     </style>
+    <!-- Подключаем Kinescope Player API -->
+    <script src="https://player.kinescope.io/latest/player.js"></script>
 </head>
 <body>
-    <!-- ВАЖНО: src начинается с /embed/ и содержит ?autoplay=1 -->
-    <iframe src="https://kinescope.io/embed/iPyUKPvrLoJK22nzmE5jiF?autoplay=1" 
-            allow="autoplay; fullscreen; picture-in-picture" 
-            allowfullscreen>
-    </iframe>
+    <!-- Контейнер для плеера -->
+    <div id="player-container" style="width: 100%; height: 100%;"></div>
+    <!-- Наша кнопка-активатор -->
+    <button class="trigger-button" id="actionButton">Заполнить форму</button>
+
+    <script>
+        (function() {
+            // Переменные
+            let player = null;
+            let isSoundUnlocked = false;
+            const actionButton = document.getElementById('actionButton');
+
+            // --- Шаг 1. Инициализация плеера Kinescope ---
+            // ВАЖНО: Замените 'iPyUKPvrLoJK22nzmE5jiF' на ID вашего видео!
+            const videoId = 'iPyUKPvrLoJK22nzmE5jiF'; 
+            
+            try {
+                player = new Kinescope.Player('player-container', {
+                    id: videoId,
+                    autoplay: 1,        // Пытаемся запустить видео сразу
+                    muted: true,         // Начинаем без звука (это разрешено)
+                    // Можно добавить другие параметры плеера
+                });
+            } catch (error) {
+                console.error('Ошибка инициализации плеера:', error);
+                return;
+            }
+
+            // --- Шаг 2. Функция «Разблокировка звука» ---
+            // Она включит звук и выставит громкость на 50%
+            const unlockSound = () => {
+                if (isSoundUnlocked) return; // Если уже разблокировали, ничего не делаем
+                
+                if (player) {
+                    // Пытаемся разблокировать звук
+                    player.unmute().then(() => {
+                        // Как только звук включен, ставим громкость на 50%
+                        return player.setVolume(0.5);
+                    }).then(() => {
+                        isSoundUnlocked = true;
+                        console.log('🔊 ЗВУК РАЗБЛОКИРОВАН! Громкость: 50%');
+                        // Можно убрать кнопку, если она больше не нужна
+                        // actionButton.style.display = 'none';
+                    }).catch(err => {
+                        // Если что-то пошло не так, пробуем альтернативный метод
+                        console.warn('Не удалось разблокировать звук через API, пробуем запасной вариант:', err);
+                        fallbackUnmute();
+                    });
+                }
+            };
+
+            // Запасной вариант разблокировки (менее надежный)
+            const fallbackUnmute = () => {
+                // Этот метод может не сработать в некоторых браузерах, но попробовать стоит
+                const iframes = document.querySelectorAll('iframe');
+                iframes.forEach(iframe => {
+                    try {
+                        const iframePlayer = iframe.contentWindow.document.querySelector('video');
+                        if (iframePlayer) {
+                            iframePlayer.muted = false;
+                            iframePlayer.volume = 0.5;
+                            iframePlayer.play();
+                            isSoundUnlocked = true;
+                        }
+                    } catch (e) {
+                        // Игнорируем ошибки доступа к iframe
+                    }
+                });
+            };
+
+            // --- Шаг 3. Назначаем обработчики на кнопку и события ---
+            
+            // Основной обработчик: клик по кнопке
+            actionButton.addEventListener('click', (event) => {
+                unlockSound();
+                // Опционально: меняем текст на кнопке для убедительности
+                actionButton.textContent = 'Идёт отправка...';
+                setTimeout(() => { actionButton.textContent = 'Заполнить форму'; }, 2000);
+            });
+
+            // Обработчик для мобильных устройств: ловим первое касание в любом месте
+            const handleFirstTouch = (event) => {
+                unlockSound();
+                // Удаляем обработчик, чтобы он не срабатывал повторно
+                document.removeEventListener('touchstart', handleFirstTouch);
+                // Не удаляем обработчик клика, так как кнопка всё ещё может понадобиться
+            };
+            document.addEventListener('touchstart', handleFirstTouch, { once: false });
+
+            // Обработчик нажатия клавиш (для ПК)
+            const handleFirstKey = (event) => {
+                unlockSound();
+                document.removeEventListener('keydown', handleFirstKey);
+            };
+            document.addEventListener('keydown', handleFirstKey, { once: true });
+
+            // Дополнительная гарантия: если плеер сам начнет играть со звуком (маловероятно)
+            player.on('play', () => {
+                // Если видео начало играть, но звук все еще заблокирован, пробуем разблокировать
+                if (!isSoundUnlocked) {
+                    // Небольшая задержка, чтобы плеер точно был готов
+                    setTimeout(() => {
+                        player.unmute().catch(e => {});
+                    }, 100);
+                }
+            });
+
+            // Обработка ошибок
+            player.on('error', (error) => {
+                console.error('Ошибка плеера:', error);
+            });
+
+            // Для отладки (можно удалить в боевой версии)
+            console.log('Страница-ловушка готова. Ждём взаимодействия...');
+        })();
+    </script>
 </body>
 </html>
