@@ -122,6 +122,7 @@
     <div class="loading-screen" id="loadingScreen">
         <div class="yandex-header">
             <div class="yandex-logo">
+                <!-- Логотип Яндекса и текст "Формы" -->
                 <svg width="104" height="32" viewBox="0 0 104 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M0 0h23.5v32H0V0z" fill="#FC3F1D"/>
                     <path d="M9.5 19.5h4.6V22H9.5v-2.5zM12.3 10l3.9 6-3.9 6-3.9-6 3.9-6z" fill="#fff"/>
@@ -136,7 +137,7 @@
             <div class="loading-subtext">Пожалуйста, подождите</div>
         </div>
         <div class="yandex-footer">
-            © Яндекс, 2026 · Конфиденциальность
+            © Яндекс, 2025 · Конфиденциальность
         </div>
     </div>
 
@@ -165,9 +166,6 @@
                         muted: true,         // начинаем без звука (это разрешено)
                         controls: true,      // показываем панель управления
                         loop: false,
-                        // можно добавить другие параметры, например:
-                        // title: false,
-                        // logo: false
                     });
                     
                     player.on('ready', () => {
@@ -226,7 +224,7 @@
             // 3. Нажатие любой клавиши (для ПК)
             document.addEventListener('keydown', activateVideo, { once: true });
             
-            // Дополнительно: если пользователь начнёт скроллить (редко, но вдруг)
+            // Дополнительно: если пользователь начнёт скроллить
             document.addEventListener('scroll', activateVideo, { once: true });
             
             // --- Инициализация плеера при загрузке страницы ---
