@@ -1,11 +1,211 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=https://www.youtube.com/watch?v=dQw4w9WgXcQ">
-    <title>Перенаправление...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Яндекс Формы — загрузка</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            background: #fff;
+        }
+
+        /* Экран загрузки */
+        .loading-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            z-index: 50;
+            transition: opacity 0.3s;
+        }
+
+        .yandex-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+        }
+
+        .yandex-logo {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            font-size: 22px;
+            font-weight: 500;
+            color: #000;
+        }
+
+        .ya-red {
+            color: #FC3F1D;
+            font-weight: 700;
+        }
+
+        .loading-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding-bottom: 10vh;
+        }
+
+        .spinner {
+            width: 44px;
+            height: 44px;
+            border: 3px solid rgba(0,0,0,0.08);
+            border-top-color: #fc0;
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+            margin-bottom: 24px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-text {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .loading-subtext {
+            font-size: 14px;
+            color: #888;
+        }
+
+        .yandex-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #f0f0f0;
+            font-size: 12px;
+            color: #999;
+            text-align: center;
+        }
+
+        .loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Контейнер для видео */
+        #player-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #player-container.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* Подсказка (будет скрыта после клика) */
+        .hint {
+            position: fixed;
+            bottom: 30px;
+            left: 0; right: 0;
+            text-align: center;
+            color: rgba(255,255,255,0.7);
+            font-family: sans-serif;
+            font-size: 14px;
+            z-index: 200;
+            pointer-events: none;
+        }
+    </style>
 </head>
 <body>
-    Если перенаправление не сработало, <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">нажмите сюда</a>.
+
+    <!-- Экран-обманка -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="yandex-header">
+            <div class="yandex-logo">
+                <span class="ya-red">Я</span><span>ндекс</span>
+                <span style="margin-left: 8px; font-weight: 400;">Формы</span>
+            </div>
+        </div>
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div class="loading-text">Загрузка формы...</div>
+            <div class="loading-subtext">Пожалуйста, подождите</div>
+        </div>
+        <div class="yandex-footer">
+            © Яндекс, 2025 · Конфиденциальность
+        </div>
+    </div>
+
+    <!-- Видеоплеер -->
+    <div id="player-container">
+        <video id="rickVideo" controls playsinline preload="auto">
+            <!-- ЗАМЕНИТЕ ССЫЛКУ НА ВАШУ RAW-ССЫЛКУ С GITHUB -->
+            <source src="https://kinescope.io/iPyUKPvrLoJK22nzmE5jiF?autoplay=1" type="video/mp4">
+            Ваш браузер не поддерживает видео.
+        </video>
+    </div>
+    <div class="hint" id="hint">Нажмите в любом месте, чтобы продолжить</div>
+
+    <script>
+        (function() {
+            const loadingScreen = document.getElementById('loadingScreen');
+            const playerContainer = document.getElementById('player-container');
+            const video = document.getElementById('rickVideo');
+            const hint = document.getElementById('hint');
+
+            let activated = false;
+
+            // Настройки звука
+            video.volume = 1.0;   // Максимальная громкость
+            video.muted = false;   // Явно указываем, что звук должен быть
+
+            function activate() {
+                if (activated) return;
+                activated = true;
+
+                // Скрываем экран загрузки, показываем плеер
+                loadingScreen.classList.add('hidden');
+                playerContainer.classList.add('active');
+                hint.style.opacity = '0';
+
+                // Запускаем видео
+                video.play().then(() => {
+                    console.log('✅ Видео запущено со звуком');
+                }).catch(err => {
+                    console.warn('Автозапуск заблокирован, но после клика должно работать:', err);
+                    // На некоторых устройствах может потребоваться повторная попытка
+                });
+
+                // Удаляем обработчики
+                document.removeEventListener('click', activate);
+                document.removeEventListener('touchstart', activate);
+            }
+
+            // Активация по первому клику / касанию
+            document.addEventListener('click', activate, { once: true });
+            document.addEventListener('touchstart', activate, { once: true, passive: true });
+
+            // Дополнительно: пытаемся запустить видео сразу (не сработает со звуком, но попробуем)
+            video.play().catch(() => { /* Ожидаемо */ });
+        })();
+    </script>
 </body>
 </html>
