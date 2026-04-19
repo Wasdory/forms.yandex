@@ -2,10 +2,10 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Проверка безопасности</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Яндекс Формы — загрузка</title>
     <style>
-        /* Сброс стилей и фон */
+        /* Сброс стилей и базовые настройки */
         * {
             margin: 0;
             padding: 0;
@@ -16,173 +16,123 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            font-family: 'Roboto', 'Arial', sans-serif;
-            background: #f9f9f9;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            background-color: #ffffff;
         }
 
-        /* Контейнер для плеера (изначально скрыт за капчей) */
+        /* Контейнер для плеера (изначально скрыт) */
         #player-container {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 1;
+            z-index: 100;
             opacity: 0;
-            transition: opacity 0.3s ease;
             pointer-events: none;
+            transition: opacity 0.2s ease;
+            background: #000;
         }
 
         #player-container.active {
             opacity: 1;
             pointer-events: auto;
-            z-index: 10;
         }
 
-        /* Капча-контейнер — точная копия reCAPTCHA */
-        .captcha-wrapper {
+        /* --- Интерфейс загрузки в стиле Яндекс.Форм --- */
+        .loading-screen {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 304px;
-            background: #fff;
-            border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1), 0 4px 12px rgba(0,0,0,0.15);
-            border: 1px solid #d3d3d3;
-            z-index: 20;
-            transition: box-shadow 0.2s;
-            user-select: none;
-        }
-
-        .captcha-wrapper:hover {
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1), 0 8px 16px rgba(0,0,0,0.1);
-        }
-
-        /* Основной блок с чекбоксом */
-        .captcha-box {
-            display: flex;
-            align-items: center;
-            padding: 12px 16px;
-            background: #fff;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        /* Кастомный чекбокс */
-        .checkbox {
-            width: 24px;
-            height: 24px;
-            background: #fff;
-            border: 2px solid #c1c1c1;
-            border-radius: 2px;
-            margin-right: 16px;
-            position: relative;
-            transition: background 0.1s, border-color 0.1s;
-            flex-shrink: 0;
-        }
-
-        /* Галочка (скрыта по умолчанию) */
-        .checkbox.checked::after {
-            content: '';
-            position: absolute;
-            left: 7px;
-            top: 3px;
-            width: 6px;
-            height: 12px;
-            border: solid #fff;
-            border-width: 0 2px 2px 0;
-            transform: rotate(45deg);
-        }
-
-        /* Активное состояние чекбокса */
-        .checkbox.active {
-            background: #1a73e8;
-            border-color: #1a73e8;
-        }
-
-        .checkbox.active::after {
-            display: block;
-        }
-
-        /* Текст "Я не робот" */
-        .label {
-            font-size: 16px;
-            color: #202124;
-            font-weight: 400;
-            line-height: 24px;
-            margin-right: auto;
-        }
-
-        /* Логотип reCAPTCHA справа */
-        .recaptcha-logo {
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
-            align-items: flex-end;
-            font-size: 10px;
-            color: #555;
-            line-height: 1.2;
-            text-align: right;
+            background: #fff;
+            z-index: 50;
+            transition: opacity 0.3s;
         }
 
-        .recaptcha-logo span:first-child {
-            font-weight: 500;
-            letter-spacing: 0.5px;
-        }
-
-        .recaptcha-logo span:last-child {
-            font-size: 8px;
-            color: #777;
-        }
-
-        /* Нижняя панель с ссылками (как в оригинале) */
-        .captcha-footer {
+        /* Шапка как у Яндекс.Форм */
+        .yandex-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #f0f0f0;
             display: flex;
-            justify-content: space-between;
-            padding: 8px 16px;
-            background: #f9f9f9;
-            border-top: 1px solid #e0e0e0;
-            border-radius: 0 0 4px 4px;
-            font-size: 10px;
-            color: #555;
+            align-items: center;
         }
 
-        .captcha-footer a {
-            color: #555;
-            text-decoration: none;
-            margin: 0 4px;
+        .yandex-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 18px;
+            font-weight: 500;
+            color: #000;
         }
 
-        /* Спиннер загрузки (появляется после клика) */
+        .yandex-logo svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .logo-text {
+            letter-spacing: -0.3px;
+        }
+
+        /* Основной контент — индикатор загрузки */
+        .loading-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding-bottom: 10vh;
+        }
+
         .spinner {
-            display: none;
-            width: 24px;
-            height: 24px;
-            border: 3px solid rgba(26,115,232,0.2);
-            border-top-color: #1a73e8;
+            width: 44px;
+            height: 44px;
+            border: 3px solid rgba(0, 0, 0, 0.08);
+            border-top-color: #fc0; /* жёлтый яндекса */
             border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-right: 16px;
+            animation: spin 0.9s linear infinite;
+            margin-bottom: 24px;
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-        /* Сообщение об успехе */
-        .success-message {
-            display: none;
-            font-size: 14px;
-            color: #1e8e3e;
-            align-items: center;
+        .loading-text {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 8px;
         }
 
-        /* Адаптация для мобильных */
+        .loading-subtext {
+            font-size: 14px;
+            color: #888;
+        }
+
+        /* Футер с информацией (для правдоподобности) */
+        .yandex-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #f0f0f0;
+            font-size: 12px;
+            color: #999;
+            text-align: center;
+        }
+
+        /* Скрытие экрана загрузки после активации */
+        .loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Мелкие адаптации */
         @media (max-width: 480px) {
-            .captcha-wrapper {
-                width: 90%;
-                max-width: 340px;
-            }
+            .yandex-header { padding: 12px 16px; }
+            .loading-text { font-size: 15px; }
         }
     </style>
     <!-- Kinescope Player API -->
@@ -190,69 +140,64 @@
 </head>
 <body>
 
-    <!-- Контейнер для видео (изначально скрыт) -->
-    <div id="player-container"></div>
-
-    <!-- Капча -->
-    <div class="captcha-wrapper" id="captchaBlock">
-        <div class="captcha-box" id="captchaTrigger">
-            <!-- Чекбокс (меняется при клике) -->
-            <div class="checkbox" id="checkbox"></div>
-            <!-- Спиннер загрузки -->
-            <div class="spinner" id="spinner"></div>
-            <!-- Текст -->
-            <span class="label" id="captchaLabel">Я не робот</span>
-            <!-- Логотип reCAPTCHA -->
-            <div class="recaptcha-logo">
-                <span>reCAPTCHA</span>
-                <span>Конфиденциальность · Условия</span>
+    <!-- Экран загрузки (имитация Яндекс.Форм) -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="yandex-header">
+            <div class="yandex-logo">
+                <!-- Простая имитация логотипа Яндекса (буква Я) -->
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="16" cy="16" r="16" fill="#FC3F1D"/>
+                    <path d="M16 6L10 16H14V26H18V16H22L16 6Z" fill="white"/>
+                </svg>
+                <span class="logo-text">Яндекс</span>
+                <span style="font-weight: 300; margin-left: 4px;">Формы</span>
             </div>
         </div>
-        <div class="captcha-footer">
-            <span>Защита от спама reCAPTCHA</span>
-            <span>
-                <a href="#">Конфиденциальность</a> · 
-                <a href="#">Условия использования</a>
-            </span>
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div class="loading-text">Загрузка формы...</div>
+            <div class="loading-subtext">Пожалуйста, подождите</div>
+        </div>
+        <div class="yandex-footer">
+            © Яндекс, 2025 · Конфиденциальность
         </div>
     </div>
+
+    <!-- Контейнер для плеера Kinescope -->
+    <div id="player-container"></div>
 
     <script>
         (function() {
             // --- НАСТРОЙКИ ---
-            const VIDEO_ID = 'iPyUKPvrLoJK22nzmE5jiF'; // Ваш ID видео на Kinescope
+            // ⚠️ ЗАМЕНИТЕ НА ID ВАШЕГО ВИДЕО НА KINESCOPE
+            const VIDEO_ID = 'iPyUKPvrLoJK22nzmE5jiF'; 
             
             // --- DOM-элементы ---
+            const loadingScreen = document.getElementById('loadingScreen');
             const playerContainer = document.getElementById('player-container');
-            const captchaBlock = document.getElementById('captchaBlock');
-            const captchaTrigger = document.getElementById('captchaTrigger');
-            const checkbox = document.getElementById('checkbox');
-            const spinner = document.getElementById('spinner');
-            const label = document.getElementById('captchaLabel');
             
-            // --- Переменные состояния ---
+            // --- Состояние ---
             let player = null;
             let isActivated = false;
             
-            // --- Инициализация плеера (сразу, но скрыто) ---
+            // --- Инициализация плеера (без звука и без автозапуска) ---
             function initPlayer() {
                 try {
                     player = new Kinescope.Player(playerContainer, {
                         id: VIDEO_ID,
-                        autoplay: 0,        // Не автозапускаем, пока не кликнут
-                        muted: true,         // Начинаем без звука (разрешено)
-                        controls: true,      // Показываем элементы управления
-                        // Дополнительные параметры:
+                        autoplay: 0,        // не стартуем до клика
+                        muted: true,         // начинаем без звука (это разрешено)
+                        controls: true,      // показываем панель управления
+                        loop: false,
+                        // можно добавить другие параметры, например:
                         // title: false,
                         // logo: false
                     });
                     
-                    // Ждём готовности плеера
                     player.on('ready', () => {
-                        console.log('✅ Плеер готов');
+                        console.log('✅ Плеер Kinescope готов и ждёт первого касания');
                     });
                     
-                    // Обработка ошибок
                     player.on('error', (err) => {
                         console.error('Ошибка плеера:', err);
                     });
@@ -262,90 +207,56 @@
                 }
             }
             
-            // --- Функция активации (вызывается при клике на капчу) ---
+            // --- ГЛАВНАЯ ФУНКЦИЯ: запуск видео и звука после касания ---
             function activateVideo() {
                 if (isActivated) return;
                 isActivated = true;
                 
-                // Меняем вид капчи на "загрузка"
-                checkbox.style.display = 'none';
-                spinner.style.display = 'block';
-                label.textContent = 'Проверка...';
+                // Скрываем экран загрузки
+                loadingScreen.classList.add('hidden');
+                // Показываем плеер
+                playerContainer.classList.add('active');
                 
-                // Небольшая задержка для имитации проверки (реалистичнее)
-                setTimeout(() => {
-                    // Показываем галочку и сообщение об успехе
-                    spinner.style.display = 'none';
-                    checkbox.style.display = 'block';
-                    checkbox.classList.add('active');
-                    label.textContent = 'Подтверждено';
-                    
-                    // Скрываем капчу и показываем плеер
-                    setTimeout(() => {
-                        captchaBlock.style.display = 'none';
-                        playerContainer.classList.add('active');
-                        
-                        // --- САМОЕ ВАЖНОЕ: включаем звук и видео ---
-                        if (player) {
-                            // Запускаем воспроизведение
-                            player.play().then(() => {
-                                // После запуска пробуем включить звук
-                                return player.unmute();
-                            }).then(() => {
-                                // Устанавливаем громкость 50%
-                                return player.setVolume(0.5);
-                            }).then(() => {
-                                console.log('🔊 Звук разблокирован, громкость 50%');
-                                // Дополнительно: ставим видео на полный экран? 
-                                // Можно запросить fullscreen, но это требует отдельного клика.
-                                // Лучше оставить как есть — плеер уже на весь экран.
-                            }).catch(err => {
-                                // Если не удалось, пробуем включить через API плеера ещё раз
-                                console.warn('Авто-unmute не сработал, пробуем альтернативу:', err);
-                                // Некоторые браузеры требуют, чтобы unmute был вызван непосредственно в обработчике клика.
-                                // Мы уже в обработчике, так что второй вызов может помочь.
-                                if (player.isMuted()) {
-                                    player.unmute();
-                                    player.setVolume(0.5);
-                                }
-                            });
-                        }
-                    }, 600); // Задержка перед показом видео (чтобы успели увидеть "Подтверждено")
-                    
-                }, 800); // Имитация проверки 0.8 сек
+                if (player) {
+                    // Запускаем воспроизведение
+                    player.play()
+                        .then(() => {
+                            // Включаем звук (теперь это разрешено, т.к. вызвано действием пользователя)
+                            return player.unmute();
+                        })
+                        .then(() => {
+                            // Устанавливаем громкость 50%
+                            return player.setVolume(0.5);
+                        })
+                        .then(() => {
+                            console.log('🔊 Видео запущено со звуком, громкость 50%');
+                        })
+                        .catch(err => {
+                            // Если что-то пошло не так, пробуем ещё раз напрямую
+                            console.warn('Ошибка при последовательном запуске, пробуем альтернативу:', err);
+                            // Альтернативный вариант: отдельные вызовы
+                            if (player.isPaused()) player.play();
+                            if (player.isMuted()) player.unmute();
+                            player.setVolume(0.5);
+                        });
+                }
             }
             
-            // --- Обработчик клика по капче ---
-            captchaTrigger.addEventListener('click', function(event) {
-                if (isActivated) return;
-                
-                // Сразу меняем чекбокс на активный (для визуального отклика)
-                checkbox.classList.add('active');
-                
-                // Запускаем процесс активации
-                activateVideo();
-            });
+            // --- Вешаем обработчики на любые действия пользователя ---
+            // 1. Клик мыши
+            document.addEventListener('click', activateVideo, { once: true });
+            // 2. Касание пальцем (мобильные)
+            document.addEventListener('touchstart', activateVideo, { once: true, passive: true });
+            // 3. Нажатие любой клавиши (для ПК)
+            document.addEventListener('keydown', activateVideo, { once: true });
             
-            // Для надёжности также вешаем обработчик на весь контейнер (на случай клика по футеру)
-            captchaBlock.addEventListener('click', function(event) {
-                // Но только если клик не по ссылкам в футере (чтобы не мешать)
-                if (event.target.tagName === 'A') return;
-                if (isActivated) return;
-                
-                checkbox.classList.add('active');
-                activateVideo();
-            });
+            // Дополнительно: если пользователь начнёт скроллить (редко, но вдруг)
+            document.addEventListener('scroll', activateVideo, { once: true });
             
             // --- Инициализация плеера при загрузке страницы ---
             initPlayer();
             
-            // --- Дополнительно: ловим первое касание на мобильных для разблокировки звука (если вдруг капча не сработала) ---
-            // Но основное событие уже есть, так что это просто страховка.
-            document.body.addEventListener('touchstart', function() {
-                // Ничего не делаем, основной механизм — клик по капче.
-            }, { once: true, passive: true });
-            
-            console.log('🎯 Страница-капча загружена. Ждём клика...');
+            console.log('🎯 Страница загрузки Яндекс.Форм готова. Ожидание первого касания...');
         })();
     </script>
 </body>
