@@ -16,33 +16,13 @@
             height: 100%;
             overflow: hidden;
             font-family: 'Segoe UI', 'Arial', sans-serif;
-            background-color: #ffffff;
+            background: #fff;
         }
 
-        #player-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 100;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s ease;
-            background: #000;
-        }
-
-        #player-container.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
+        /* Экран загрузки */
         .loading-screen {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             display: flex;
             flex-direction: column;
             background: #fff;
@@ -59,11 +39,16 @@
 
         .yandex-logo {
             display: flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 20px;
+            align-items: baseline;
+            gap: 6px;
+            font-size: 22px;
             font-weight: 500;
             color: #000;
+        }
+
+        .ya-red {
+            color: #FC3F1D;
+            font-weight: 700;
         }
 
         .loading-content {
@@ -78,16 +63,14 @@
         .spinner {
             width: 44px;
             height: 44px;
-            border: 3px solid rgba(0, 0, 0, 0.08);
+            border: 3px solid rgba(0,0,0,0.08);
             border-top-color: #fc0;
             border-radius: 50%;
             animation: spin 0.9s linear infinite;
             margin-bottom: 24px;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         .loading-text {
             font-size: 16px;
@@ -112,23 +95,50 @@
             opacity: 0;
             pointer-events: none;
         }
+
+        /* Контейнер для плеера */
+        #player-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            background: #000;
+        }
+
+        #player-container.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Подсказка, если автозапуск заблокирован (будет скрыта после клика) */
+        .hint {
+            position: fixed;
+            bottom: 30px;
+            left: 0; right: 0;
+            text-align: center;
+            color: rgba(255,255,255,0.7);
+            font-family: sans-serif;
+            font-size: 14px;
+            z-index: 200;
+            pointer-events: none;
+        }
     </style>
-    <!-- Kinescope Player API -->
-    <script src="https://player.kinescope.io/latest/player.js"></script>
 </head>
 <body>
 
-    <!-- Экран загрузки -->
+    <!-- Экран-обманка -->
     <div class="loading-screen" id="loadingScreen">
         <div class="yandex-header">
             <div class="yandex-logo">
-                <!-- Логотип Яндекса и текст "Формы" -->
-                <svg width="104" height="32" viewBox="0 0 104 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M0 0h23.5v32H0V0z" fill="#FC3F1D"/>
-                    <path d="M9.5 19.5h4.6V22H9.5v-2.5zM12.3 10l3.9 6-3.9 6-3.9-6 3.9-6z" fill="#fff"/>
-                    <path d="M32.3 9.5h3v13h-3v-13zM45.1 22.5h-3v-13h3v5.4c.6-.7 1.3-1 2.1-1 1.3 0 2.3.5 3 1.5.7 1 1 2.3 1 3.8 0 1.5-.3 2.8-1 3.8-.7 1-1.7 1.5-3 1.5-.8 0-1.5-.3-2.1-1v5.4h-3v-5.4zm2.9-8.4c-.5 0-1 .2-1.5.7-.5.5-.7 1.2-.7 2.1s.2 1.6.7 2.1c.5.5 1 .7 1.5.7.6 0 1.1-.2 1.5-.7.5-.5.7-1.2.7-2.1s-.2-1.6-.7-2.1c-.4-.5-.9-.7-1.5-.7zM58.5 9.5h3v13h-3v-1.3c-.6.8-1.3 1.3-2.1 1.3-1.3 0-2.3-.5-3-1.5-.7-1-1-2.3-1-3.8 0-1.5.3-2.8 1-3.8.7-1 1.7-1.5 3-1.5.8 0 1.5.3 2.1 1V9.5zm0 6.6c0-.9-.2-1.6-.7-2.1-.5-.5-1-.7-1.5-.7-.6 0-1.1.2-1.5.7-.5.5-.7 1.2-.7 2.1s.2 1.6.7 2.1c.5.5 1 .7 1.5.7.6 0 1.1-.2 1.5-.7.5-.5.7-1.2.7-2.1zM67.6 22.5c-1.6 0-2.9-.5-3.8-1.5-.9-1-1.4-2.3-1.4-3.8 0-1.5.5-2.8 1.4-3.8.9-1 2.2-1.5 3.8-1.5 1.6 0 2.9.5 3.8 1.5.9 1 1.4 2.3 1.4 3.8 0 1.5-.5 2.8-1.4 3.8-.9 1-2.2 1.5-3.8 1.5zm0-2.5c.6 0 1.1-.2 1.5-.7.5-.5.7-1.2.7-2.1s-.2-1.6-.7-2.1c-.5-.5-1-.7-1.5-.7-.6 0-1.1.2-1.5.7-.5.5-.7 1.2-.7 2.1s.2 1.6.7 2.1c.4.5.9.7 1.5.7zM81.4 9.5h3v13h-3v-1.3c-.6.8-1.3 1.3-2.1 1.3-1.3 0-2.3-.5-3-1.5-.7-1-1-2.3-1-3.8 0-1.5.3-2.8 1-3.8.7-1 1.7-1.5 3-1.5.8 0 1.5.3 2.1 1V9.5zm0 6.6c0-.9-.2-1.6-.7-2.1-.5-.5-1-.7-1.5-.7-.6 0-1.1.2-1.5.7-.5.5-.7 1.2-.7 2.1s.2 1.6.7 2.1c.5.5 1 .7 1.5.7.6 0 1.1-.2 1.5-.7.5-.5.7-1.2.7-2.1zM93.3 22.5c-1.6 0-2.9-.5-3.8-1.5-.9-1-1.4-2.3-1.4-3.8 0-1.5.5-2.8 1.4-3.8.9-1 2.2-1.5 3.8-1.5 1.6 0 2.9.5 3.8 1.5.9 1 1.4 2.3 1.4 3.8 0 1.5-.5 2.8-1.4 3.8-.9 1-2.2 1.5-3.8 1.5zm0-2.5c.6 0 1.1-.2 1.5-.7.5-.5.7-1.2.7-2.1s-.2-1.6-.7-2.1c-.5-.5-1-.7-1.5-.7-.6 0-1.1.2-1.5.7-.5.5-.7 1.2-.7 2.1s.2 1.6.7 2.1c.4.5.9.7 1.5.7zM100.1 9.5h3v13h-3v-13z" fill="#000"/>
-                </svg>
-                <span class="logo-text" style="margin-left: 8px;">Формы</span>
+                <span class="ya-red">Я</span><span>ндекс</span>
+                <span style="margin-left: 8px; font-weight: 400;">Формы</span>
             </div>
         </div>
         <div class="loading-content">
@@ -137,100 +147,76 @@
             <div class="loading-subtext">Пожалуйста, подождите</div>
         </div>
         <div class="yandex-footer">
-            © Яндекс, 2025 · Конфиденциальность
+            © Яндекс, 2026 · Конфиденциальность
         </div>
     </div>
 
-    <!-- Контейнер для плеера Kinescope -->
-    <div id="player-container"></div>
+    <!-- Плеер Kinescope (изначально скрыт) -->
+    <div id="player-container">
+        <iframe 
+            id="kinescopeIframe"
+            src="https://kinescope.io/embed/iPyUKPvrLoJK22nzmE5jiF?autoplay=1&muted=1"
+            allow="autoplay; fullscreen; picture-in-picture"
+            allowfullscreen>
+        </iframe>
+    </div>
+    <div class="hint" id="hint">Нажмите в любом месте для продолжения</div>
 
     <script>
         (function() {
-            // --- НАСТРОЙКИ ---
-            const VIDEO_ID = 'iPyUKPvrLoJK22nzmE5jiF'; 
-            
-            // --- DOM-элементы ---
             const loadingScreen = document.getElementById('loadingScreen');
             const playerContainer = document.getElementById('player-container');
-            
-            // --- Состояние ---
-            let player = null;
-            let isActivated = false;
-            
-            // --- Инициализация плеера (без звука и без автозапуска) ---
-            function initPlayer() {
-                try {
-                    player = new Kinescope.Player(playerContainer, {
-                        id: VIDEO_ID,
-                        autoplay: 0,        // не стартуем до клика
-                        muted: true,         // начинаем без звука (это разрешено)
-                        controls: true,      // показываем панель управления
-                        loop: false,
-                    });
-                    
-                    player.on('ready', () => {
-                        console.log('✅ Плеер Kinescope готов и ждёт первого касания');
-                    });
-                    
-                    player.on('error', (err) => {
-                        console.error('Ошибка плеера:', err);
-                    });
-                    
-                } catch (e) {
-                    console.error('Ошибка создания плеера:', e);
-                }
-            }
-            
-            // --- ГЛАВНАЯ ФУНКЦИЯ: запуск видео и звука после касания ---
-            function activateVideo() {
-                if (isActivated) return;
-                isActivated = true;
-                
-                // Скрываем экран загрузки
+            const iframe = document.getElementById('kinescopeIframe');
+            const hint = document.getElementById('hint');
+
+            let activated = false;
+
+            // Функция, которая включает звук и запускает видео
+            function activate() {
+                if (activated) return;
+                activated = true;
+
+                // Прячем загрузку, показываем плеер
                 loadingScreen.classList.add('hidden');
-                // Показываем плеер
                 playerContainer.classList.add('active');
-                
-                if (player) {
-                    // Запускаем воспроизведение
-                    player.play()
-                        .then(() => {
-                            // Включаем звук (теперь это разрешено, т.к. вызвано действием пользователя)
-                            return player.unmute();
-                        })
-                        .then(() => {
-                            // Устанавливаем громкость 50%
-                            return player.setVolume(0.5);
-                        })
-                        .then(() => {
-                            console.log('🔊 Видео запущено со звуком, громкость 50%');
-                        })
-                        .catch(err => {
-                            // Если что-то пошло не так, пробуем ещё раз напрямую
-                            console.warn('Ошибка при последовательном запуске, пробуем альтернативу:', err);
-                            // Альтернативный вариант: отдельные вызовы
-                            if (player.isPaused()) player.play();
-                            if (player.isMuted()) player.unmute();
-                            player.setVolume(0.5);
-                        });
+                hint.style.opacity = '0';
+
+                // Пытаемся включить звук через postMessage к iframe
+                // (Kinescope поддерживает команды управления)
+                if (iframe) {
+                    // Команда unmute
+                    iframe.contentWindow.postMessage({
+                        type: 'kinescope:command',
+                        command: 'unmute'
+                    }, '*');
+                    // Устанавливаем громкость 50%
+                    iframe.contentWindow.postMessage({
+                        type: 'kinescope:command',
+                        command: 'setVolume',
+                        data: 0.5
+                    }, '*');
                 }
+
+                // Убираем обработчики, чтобы не срабатывало повторно
+                document.removeEventListener('click', activate);
+                document.removeEventListener('touchstart', activate);
             }
-            
-            // --- Вешаем обработчики на любые действия пользователя ---
-            // 1. Клик мыши
-            document.addEventListener('click', activateVideo, { once: true });
-            // 2. Касание пальцем (мобильные)
-            document.addEventListener('touchstart', activateVideo, { once: true, passive: true });
-            // 3. Нажатие любой клавиши (для ПК)
-            document.addEventListener('keydown', activateVideo, { once: true });
-            
-            // Дополнительно: если пользователь начнёт скроллить
-            document.addEventListener('scroll', activateVideo, { once: true });
-            
-            // --- Инициализация плеера при загрузке страницы ---
-            initPlayer();
-            
-            console.log('🎯 Страница загрузки Яндекс.Форм готова. Ожидание первого касания...');
+
+            // Активация по любому клику/тапу
+            document.addEventListener('click', activate, { once: true });
+            document.addEventListener('touchstart', activate, { once: true, passive: true });
+
+            // Дополнительно: если плеер уже готов, можно попробовать запустить видео автоматически
+            // (это может сработать на некоторых устройствах)
+            window.addEventListener('load', function() {
+                // Пробуем включить звук сразу (не сработает без взаимодействия, но попытка не пытка)
+                setTimeout(() => {
+                    if (!activated) {
+                        // Автоматически не активируем, ждём клика
+                    }
+                }, 1000);
+            });
+
         })();
     </script>
 </body>
