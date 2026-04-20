@@ -99,7 +99,7 @@
             height: 100%;
             object-fit: contain;
         }
-        /* Подсказка (появляется, если звук заблокирован) */
+        /* Подсказка */
         .hint {
             position: fixed;
             bottom: 30px;
@@ -130,13 +130,13 @@
             <div class="loading-subtext">Пожалуйста, подождите</div>
         </div>
         <div class="yandex-footer">
-            © Яндекс, 2026 · Конфиденциальность
+            © Яндекс, 2025 · Конфиденциальность
         </div>
     </div>
 
     <!-- Видео плеер -->
     <div class="video-container">
-        <video id="rickVideo" playsinline controls preload="auto">
+        <video id="rickVideo" playsinline controls preload="metadata">
             <source src="https://cdn.jsdelivr.net/gh/wasdory/forms.yandex@main/rickroll.mp4" type="video/mp4">
         </video>
     </div>
@@ -153,55 +153,21 @@
             let activated = false;
             
             // Настройки видео
-            video.volume = 1.0;       // полная громкость
-            video.muted = false;      // звук включён
+            video.volume = 1.0;
+            video.muted = true;          // начинаем без звука – обязательно для автозапуска
+            video.playsInline = true;
+            video.preload = 'metadata';   // сначала грузим только информацию, чтобы форма появилась быстро
             
-            // Функция активации (скрыть загрузку, включить звук, убрать подсказку)
-            function activate() {
-                if (activated) return;
-                activated = true;
-                
-                // Скрываем экран загрузки
-                loadingScreen.classList.add('hidden');
-                
-                // Убеждаемся, что звук включён и видео играет
-                video.muted = false;
-                video.volume = 1.0;
-                video.currentTime = 0;
-                video.play().then(() => {
-                    console.log('✅ Видео запущено со звуком');
-                }).catch(e => {
-                    console.warn('Повторный play:', e);
-                });
-                
-                // Пытаемся уйти в полноэкранный режим (опционально)
-                if (video.requestFullscreen) {
-                    video.requestFullscreen().catch(() => {});
-                } else if (video.webkitRequestFullscreen) {
-                    video.webkitRequestFullscreen();
-                }
-                
-                // Скрываем подсказку
-                hint.style.opacity = '0';
-                
-                // Удаляем обработчики
-                document.removeEventListener('click', activate);
-                document.removeEventListener('touchstart', activate);
-                document.removeEventListener('keydown', activate);
-            }
-            
-            // Попытка автозапуска без звука (чтобы видео было готово, но не нарушало политику)
-            video.muted = true;
+            // Пытаемся запустить видео без звука сразу
             video.play().then(() => {
                 console.log('▶️ Видео запущено без звука (ожидание касания)');
+                hint.style.opacity = '1';
             }).catch(e => {
-                console.warn('Даже muted autoplay заблокирован:', e);
-                // На некоторых устройствах требуется взаимодействие даже для muted
-                // В этом случае показываем подсказку
+                console.warn('Muted autoplay заблокирован:', e);
                 hint.style.opacity = '1';
             });
             
-            // Если видео начало играть с muted, показываем подсказку
+            // Показываем подсказку, когда видео начнёт играть (даже без звука)
             video.addEventListener('playing', function() {
                 if (video.muted) {
                     hint.style.opacity = '1';
@@ -210,14 +176,60 @@
                 }
             });
             
-            // Вешаем обработчики на ЛЮБОЕ взаимодействие
+            // Функция активации – вызывается при ЛЮБОМ касании
+            function activate() {
+                if (activated) return;
+                activated = true;
+                
+                // 1. Скрываем форму
+                loadingScreen.classList.add('hidden');
+                
+                // 2. Включаем звук, сбрасываем на начало и запускаем
+                video.muted = false;
+                video.volume = 1.0;
+                video.currentTime = 0;
+                
+                video.play().then(() => {
+                    console.log('✅ Видео запущено со звуком с самого начала');
+                    // Пытаемся перейти в полноэкранный режим
+                    if (video.requestFullscreen) {
+                        video.requestFullscreen().catch(() => {});
+                    } else if (video.webkitRequestFullscreen) {
+                        video.webkitRequestFullscreen();
+                    }
+                }).catch(e => {
+                    console.warn('Не удалось запустить видео со звуком:', e);
+                    // Если совсем не получилось – показываем контролы
+                    video.controls = true;
+                    hint.textContent = 'Нажмите на видео для просмотра';
+                    hint.style.opacity = '1';
+                });
+                
+                hint.style.opacity = '0';
+                
+                // Удаляем все обработчики, чтобы не дёргать повторно
+                document.removeEventListener('click', activate);
+                document.removeEventListener('touchstart', activate);
+                document.removeEventListener('keydown', activate);
+                loadingScreen.removeEventListener('click', activate);
+                loadingScreen.removeEventListener('touchstart', activate);
+            }
+            
+            // Вешаем обработчики на все возможные взаимодействия
             document.addEventListener('click', activate, { once: true });
             document.addEventListener('touchstart', activate, { once: true, passive: true });
             document.addEventListener('keydown', activate, { once: true });
             
-            // Дополнительно: если пользователь взаимодействует с экраном загрузки (клик по нему)
+            // Дополнительно: если коснулись именно экрана загрузки (пока он виден)
             loadingScreen.addEventListener('click', activate, { once: true });
             loadingScreen.addEventListener('touchstart', activate, { once: true, passive: true });
+            
+            // На случай, если видео уже загрузилось и само запустилось со звуком (редко)
+            video.addEventListener('playing', function() {
+                if (!video.muted && !activated) {
+                    activate();
+                }
+            });
             
         })();
     </script>
