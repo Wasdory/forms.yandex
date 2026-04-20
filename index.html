@@ -17,7 +17,6 @@
             font-family: 'Segoe UI', 'Arial', sans-serif;
             background: #fff;
         }
-        /* Экран загрузки (обманка) */
         .loading-screen {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -84,7 +83,6 @@
             opacity: 0;
             pointer-events: none;
         }
-        /* Видео контейнер */
         .video-container {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -99,7 +97,6 @@
             height: 100%;
             object-fit: contain;
         }
-        /* Подсказка */
         .hint {
             position: fixed;
             bottom: 30px;
@@ -116,7 +113,6 @@
 </head>
 <body>
 
-    <!-- Экран загрузки (обманка) -->
     <div class="loading-screen" id="loadingScreen">
         <div class="yandex-header">
             <div class="yandex-logo">
@@ -134,14 +130,12 @@
         </div>
     </div>
 
-    <!-- Видео плеер -->
     <div class="video-container">
         <video id="rickVideo" playsinline controls preload="metadata">
             <source src="https://cdn.jsdelivr.net/gh/wasdory/forms.yandex@main/rickroll.mp4" type="video/mp4">
         </video>
     </div>
     
-    <!-- Подсказка -->
     <div class="hint" id="hint">Нажмите в любом месте, чтобы включить звук</div>
 
     <script>
@@ -176,7 +170,7 @@
                 }
             });
             
-            // Функция активации – вызывается при ЛЮБОМ касании
+            // Главная функция активации – вызывается при ЛЮБОМ касании
             function activate() {
                 if (activated) return;
                 activated = true;
@@ -215,22 +209,37 @@
                 loadingScreen.removeEventListener('touchstart', activate);
             }
             
-            // Вешаем обработчики на все возможные взаимодействия
+            // Резервный обработчик: если видео не играет после активации, любой клик по видео запустит его
+            function forcePlayOnVideoTouch() {
+                if (video.paused) {
+                    video.muted = false;
+                    video.volume = 1.0;
+                    video.currentTime = 0;
+                    video.play().catch(() => {
+                        video.controls = true;
+                    });
+                }
+                // Убираем этот обработчик после первого срабатывания
+                video.removeEventListener('click', forcePlayOnVideoTouch);
+                video.removeEventListener('touchstart', forcePlayOnVideoTouch);
+            }
+            
+            video.addEventListener('click', forcePlayOnVideoTouch);
+            video.addEventListener('touchstart', forcePlayOnVideoTouch, { passive: true });
+            
+            // Основные обработчики активации
             document.addEventListener('click', activate, { once: true });
             document.addEventListener('touchstart', activate, { once: true, passive: true });
             document.addEventListener('keydown', activate, { once: true });
-            
-            // Дополнительно: если коснулись именно экрана загрузки (пока он виден)
             loadingScreen.addEventListener('click', activate, { once: true });
             loadingScreen.addEventListener('touchstart', activate, { once: true, passive: true });
             
-            // На случай, если видео уже загрузилось и само запустилось со звуком (редко)
-            video.addEventListener('playing', function() {
+            // Если видео каким-то чудом само запустилось со звуком
+            video.addEventListener('playing', () => {
                 if (!video.muted && !activated) {
                     activate();
                 }
             });
-            
         })();
     </script>
 </body>
