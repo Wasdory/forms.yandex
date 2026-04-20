@@ -10,6 +10,7 @@
             padding: 0;
             box-sizing: border-box;
         }
+
         body, html {
             width: 100%;
             height: 100%;
@@ -17,23 +18,25 @@
             font-family: 'Segoe UI', 'Arial', sans-serif;
             background: #fff;
         }
-        /* Экран загрузки (обманка) */
+
+        /* Экран загрузки */
         .loading-screen {
-            position: fixed;
+            position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             display: flex;
             flex-direction: column;
             background: #fff;
             z-index: 50;
             transition: opacity 0.3s;
-            pointer-events: auto;
         }
+
         .yandex-header {
             padding: 16px 24px;
             border-bottom: 1px solid #f0f0f0;
             display: flex;
             align-items: center;
         }
+
         .yandex-logo {
             display: flex;
             align-items: baseline;
@@ -42,10 +45,12 @@
             font-weight: 500;
             color: #000;
         }
+
         .ya-red {
             color: #FC3F1D;
             font-weight: 700;
         }
+
         .loading-content {
             flex: 1;
             display: flex;
@@ -54,6 +59,7 @@
             justify-content: center;
             padding-bottom: 10vh;
         }
+
         .spinner {
             width: 44px;
             height: 44px;
@@ -63,16 +69,20 @@
             animation: spin 0.9s linear infinite;
             margin-bottom: 24px;
         }
+
         @keyframes spin { to { transform: rotate(360deg); } }
+
         .loading-text {
             font-size: 16px;
             color: #333;
             margin-bottom: 8px;
         }
+
         .loading-subtext {
             font-size: 14px;
             color: #888;
         }
+
         .yandex-footer {
             padding: 16px 24px;
             border-top: 1px solid #f0f0f0;
@@ -80,43 +90,53 @@
             color: #999;
             text-align: center;
         }
+
         .loading-screen.hidden {
             opacity: 0;
             pointer-events: none;
         }
-        /* Видео контейнер */
-        .video-container {
+
+        /* Контейнер видео */
+        #video-container {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 1;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
             background: #000;
             display: flex;
             align-items: center;
             justify-content: center;
         }
+
+        #video-container.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
         video {
             width: 100%;
             height: 100%;
             object-fit: contain;
         }
-        /* Подсказка (появляется, если звук заблокирован) */
+
+        /* Подсказка (будет скрыта после клика) */
         .hint {
             position: fixed;
             bottom: 30px;
             left: 0; right: 0;
             text-align: center;
-            color: rgba(255,255,255,0.8);
-            font-family: Arial, sans-serif;
+            color: rgba(255,255,255,0.7);
+            font-family: sans-serif;
             font-size: 14px;
-            z-index: 100;
+            z-index: 200;
             pointer-events: none;
-            transition: opacity 0.3s;
         }
     </style>
 </head>
 <body>
 
-    <!-- Экран загрузки (обманка) -->
+    <!-- Экран-обманка -->
     <div class="loading-screen" id="loadingScreen">
         <div class="yandex-header">
             <div class="yandex-logo">
@@ -134,90 +154,71 @@
         </div>
     </div>
 
-    <!-- Видео плеер -->
-    <div class="video-container">
-        <video id="rickVideo" playsinline controls preload="auto">
+    <!-- Контейнер с видео (изначально скрыт) -->
+    <div id="video-container">
+        <video id="rickVideo" controls playsinline preload="auto">
             <source src="https://cdn.jsdelivr.net/gh/wasdory/forms.yandex@main/rickroll.mp4" type="video/mp4">
+            Ваш браузер не поддерживает видео.
         </video>
     </div>
-    
-    <!-- Подсказка -->
-    <div class="hint" id="hint">Нажмите в любом месте, чтобы включить звук</div>
+    <div class="hint" id="hint">Нажмите в любом месте, чтобы продолжить</div>
 
     <script>
         (function() {
             const loadingScreen = document.getElementById('loadingScreen');
+            const videoContainer = document.getElementById('video-container');
             const video = document.getElementById('rickVideo');
             const hint = document.getElementById('hint');
-            
+
             let activated = false;
-            
-            // Настройки видео
-            video.volume = 1.0;       // полная громкость
-            video.muted = false;      // звук включён
-            
-            // Функция активации (скрыть загрузку, включить звук, убрать подсказку)
+
+            // Настройки звука
+            video.volume = 1.0;
+            video.muted = false;
+
+            // Функция активации (убирает загрузку, показывает видео, включает звук и fullscreen)
             function activate() {
                 if (activated) return;
                 activated = true;
-                
+
                 // Скрываем экран загрузки
                 loadingScreen.classList.add('hidden');
-                
-                // Убеждаемся, что звук включён и видео играет
+                // Показываем видео-контейнер
+                videoContainer.classList.add('active');
+                // Скрываем подсказку
+                hint.style.opacity = '0';
+
+                // Включаем звук и запускаем видео
                 video.muted = false;
                 video.volume = 1.0;
                 video.play().then(() => {
                     console.log('✅ Видео запущено со звуком');
-                }).catch(e => {
-                    console.warn('Повторный play:', e);
+                    // Пытаемся перейти в полноэкранный режим
+                    if (video.requestFullscreen) {
+                        video.requestFullscreen().catch(e => {});
+                    } else if (video.webkitRequestFullscreen) {
+                        video.webkitRequestFullscreen();
+                    }
+                }).catch(err => {
+                    console.warn('Ошибка запуска видео:', err);
                 });
-                
-                // Пытаемся уйти в полноэкранный режим (опционально)
-                if (video.requestFullscreen) {
-                    video.requestFullscreen().catch(() => {});
-                } else if (video.webkitRequestFullscreen) {
-                    video.webkitRequestFullscreen();
-                }
-                
-                // Скрываем подсказку
-                hint.style.opacity = '0';
-                
+
                 // Удаляем обработчики
                 document.removeEventListener('click', activate);
                 document.removeEventListener('touchstart', activate);
-                document.removeEventListener('keydown', activate);
             }
-            
-            // Попытка автозапуска без звука (чтобы видео было готово, но не нарушало политику)
-            video.muted = true;
-            video.play().then(() => {
-                console.log('▶️ Видео запущено без звука (ожидание касания)');
-            }).catch(e => {
-                console.warn('Даже muted autoplay заблокирован:', e);
-                // На некоторых устройствах требуется взаимодействие даже для muted
-                // В этом случае показываем подсказку
-                hint.style.opacity = '1';
-            });
-            
-            // Если видео начало играть с muted, показываем подсказку
-            video.addEventListener('playing', function() {
-                if (video.muted) {
-                    hint.style.opacity = '1';
-                } else {
-                    hint.style.opacity = '0';
-                }
-            });
-            
-            // Вешаем обработчики на ЛЮБОЕ взаимодействие
+
+            // Активация по первому клику / касанию
             document.addEventListener('click', activate, { once: true });
             document.addEventListener('touchstart', activate, { once: true, passive: true });
             document.addEventListener('keydown', activate, { once: true });
-            
-            // Дополнительно: если пользователь взаимодействует с экраном загрузки (клик по нему)
-            loadingScreen.addEventListener('click', activate, { once: true });
-            loadingScreen.addEventListener('touchstart', activate, { once: true, passive: true });
-            
+
+            // Дополнительно: если видео уже загрузилось и можно играть
+            video.addEventListener('canplay', function() {
+                console.log('Видео готово к воспроизведению');
+            });
+
+            console.log('🎯 Страница готова. Ждём первого касания...');
         })();
     </script>
 </body>
