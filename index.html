@@ -117,7 +117,7 @@
 </head>
 <body>
 
-    <!-- Экран-обманка (Яндекс Форма) -->
+    <!-- Экран-обманка -->
     <div class="loading-screen" id="loadingScreen">
         <div class="yandex-header">
             <div class="yandex-logo">
@@ -137,7 +137,7 @@
 
     <!-- Видео плеер -->
     <div id="video-container">
-        <video id="rickVideo" playsinline controls preload="auto">
+        <video id="rickVideo" playsinline controls preload="metadata">
             <source src="https://cdn.jsdelivr.net/gh/wasdory/forms.yandex@main/rickroll.mp4" type="video/mp4">
         </video>
     </div>
@@ -151,68 +151,62 @@
             
             let isActivated = false;
             
-            // --- Предварительная настройка видео ---
-            video.volume = 1.0;                // максимальная громкость
-            video.muted = true;                // начинаем без звука (разрешено)
-            video.playsInline = true;          // обязательно для iOS
-            video.currentTime = 0;             // гарантируем начало с 0
+            // Предварительная настройка видео (без запуска)
+            video.volume = 1.0;
+            video.muted = false;        // Сразу указываем, что звук нужен
+            video.playsInline = true;
+            video.currentTime = 0;
+            // Не вызываем play() до касания!
             
-            // Начинаем загрузку и "тихое" воспроизведение
-            video.load();
-            video.play().catch(e => {
-                // Если автозапуск без звука заблокирован (редко), просто продолжаем
-                console.log('Автозапуск muted не сработал, ждём касания');
-            });
-            
-            // --- Функция, вызываемая при первом касании ---
+            // Функция активации при первом касании
             function activateVideo() {
                 if (isActivated) return;
                 isActivated = true;
                 
                 // Скрываем экран загрузки
                 loadingScreen.classList.add('hidden');
+                hint.style.opacity = '0';
                 
-                // Включаем звук и запускаем видео с начала
-                video.muted = false;
-                video.currentTime = 0;          // сброс на начало
+                // Пытаемся запустить видео со звуком
+                video.currentTime = 0;
                 video.play().then(() => {
-                    // Попытка перейти в полноэкранный режим
+                    // Успешно запустили со звуком
+                    console.log('✅ Видео запущено со звуком');
+                    // Попытка fullscreen
                     if (video.requestFullscreen) {
                         video.requestFullscreen().catch(() => {});
                     } else if (video.webkitRequestFullscreen) {
                         video.webkitRequestFullscreen();
                     }
                 }).catch(err => {
-                    // Если не удалось — показываем элементы управления
-                    console.warn('Не удалось запустить со звуком:', err);
+                    // Если не удалось (например, требуется взаимодействие именно с видео)
+                    console.warn('Автозапуск со звуком отклонён, показываем контролы:', err);
                     video.controls = true;
                     hint.textContent = 'Нажмите на видео для просмотра';
                     hint.style.opacity = '1';
+                    // Даём пользователю возможность запустить вручную
+                    // При этом загрузка уже скрыта, видео видно с кнопкой play
                 });
-                
-                // Скрываем подсказку
-                hint.style.opacity = '0';
                 
                 // Удаляем обработчики
                 document.removeEventListener('click', activateVideo);
                 document.removeEventListener('touchstart', activateVideo);
             }
             
-            // --- Вешаем обработчики на первое взаимодействие ---
+            // Вешаем обработчики на ЛЮБОЕ касание
             document.addEventListener('click', activateVideo, { once: true });
             document.addEventListener('touchstart', activateVideo, { once: true, passive: true });
             
-            // На случай, если видео уже играет со звуком (маловероятно) — всё равно скроем загрузку
-            video.addEventListener('playing', function() {
-                if (!video.muted && !isActivated) {
-                    // На некоторых устройствах может сработать автозапуск со звуком — тогда сразу активируем
+            // Дополнительно: если видео всё же каким-то чудом запустится само — скроем загрузку
+            video.addEventListener('play', function() {
+                if (!isActivated) {
                     isActivated = true;
                     loadingScreen.classList.add('hidden');
                     hint.style.opacity = '0';
                 }
             });
             
-            // Если видео застряло или ошибка — показываем контролы
+            // На случай ошибки загрузки видео
             video.addEventListener('error', function() {
                 video.controls = true;
                 hint.textContent = 'Ошибка загрузки видео';
